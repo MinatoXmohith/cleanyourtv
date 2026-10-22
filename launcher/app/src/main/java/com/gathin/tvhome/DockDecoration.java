@@ -9,7 +9,7 @@ import android.view.View;
 import androidx.annotation.NonNull;
 import androidx.recyclerview.widget.RecyclerView;
 
-/** Draws the tvOS style lighter band behind the first (dock) row and adds a gap below it. */
+/** Draws the liquid glass band behind the first (dock) row and adds a gap below it. */
 public class DockDecoration extends RecyclerView.ItemDecoration {
 
     private final int dockSize;
@@ -17,6 +17,8 @@ public class DockDecoration extends RecyclerView.ItemDecoration {
     private final Paint band = new Paint(Paint.ANTI_ALIAS_FLAG);
     private final Paint edge = new Paint(Paint.ANTI_ALIAS_FLAG);
     private final RectF rect = new RectF();
+    private final LiquidGlass.Painter glass;
+    private final int[] loc = new int[2];
 
     DockDecoration(int dockSize, float density) {
         this.dockSize = dockSize;
@@ -25,6 +27,7 @@ public class DockDecoration extends RecyclerView.ItemDecoration {
         edge.setStyle(Paint.Style.STROKE);
         edge.setStrokeWidth(density);
         edge.setColor(0x1FFFFFFF);
+        glass = new LiquidGlass.Painter(density);
     }
 
     @Override
@@ -61,7 +64,7 @@ public class DockDecoration extends RecyclerView.ItemDecoration {
         float pad = 14 * density;
         rect.inset(-pad, -pad);
         float radius = 26 * density;
-        c.drawRoundRect(rect, radius, radius, band);
-        c.drawRoundRect(rect, radius, radius, edge);
+        parent.getLocationOnScreen(loc);
+        glass.draw(c, rect, radius, loc[0], loc[1]);
     }
 }

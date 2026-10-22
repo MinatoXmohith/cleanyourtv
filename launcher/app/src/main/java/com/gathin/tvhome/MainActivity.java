@@ -109,6 +109,10 @@ public class MainActivity extends Activity implements AppAdapter.TileListener {
     private boolean advancedEffects;
     private TextView greeting;
     private View btnInputs;
+    /** tvOS-style status pill (time + avatar) that opens the Inputs / Wi-Fi / Settings panel. */
+    private View btnStatus;
+    /** Whether the TV has inputs to list; the Inputs row of the panel shows only then. */
+    private boolean hasInputs = true;
     private TextView btnWifi;
     private TextView shamsiDate;
     private TextView stats;
@@ -259,6 +263,7 @@ public class MainActivity extends Activity implements AppAdapter.TileListener {
 
         root = findViewById(R.id.root);
         root.setBackgroundColor(cfg.backgroundColor);
+        LiquidGlass.clear();
         if (cfg.wallpaper != null) showWallpaper(cfg.wallpaper);
         sky = findViewById(R.id.sky);
         sky.setIntensity(cfg.skyIntensity);
@@ -434,6 +439,10 @@ public class MainActivity extends Activity implements AppAdapter.TileListener {
         btnReorder = findViewById(R.id.btnReorder);
         btnReorder.setOnClickListener(v -> toggleReorder());
         btnReorder.setVisibility(cfg.reorderButton ? View.VISIBLE : View.GONE);
+        // Liquid glass behind the top pills; a focused pill keeps its solid white background.
+        for (View pill : new View[]{btnInputs, btnWifi, btnSettings, btnReorder}) {
+            pill.setBackground(new LiquidGlass.PillDrawable(pill, pill.getBackground(), density));
+        }
         btnSettings.setOnLongClickListener(v -> {
             showSettingsMenu();
             return true;
@@ -460,6 +469,26 @@ public class MainActivity extends Activity implements AppAdapter.TileListener {
         btnWifi.setOnKeyListener(pillKeys);
         btnSettings.setOnKeyListener(pillKeys);
         btnReorder.setOnKeyListener(pillKeys);
+
+        btnStatus = findViewById(R.id.btnStatus);
+        btnStatus.setBackground(new LiquidGlass.PillDrawable(btnStatus, btnStatus.getBackground(), density));
+        btnStatus.setOnClickListener(v -> showControlPanel());
+        btnStatus.setOnLongClickListener(v -> {
+            showSettingsMenu();
+            return true;
+        });
+        btnStatus.setOnKeyListener((v, keyCode, event) -> {
+            if (event.getAction() != KeyEvent.ACTION_DOWN) return false;
+            if (keyCode == KeyEvent.KEYCODE_DPAD_DOWN) {
+                focusTile(lastFocused % COLUMNS);
+                return true;
+            }
+            // The only stop on the top bar: nothing above it or beside it.
+            return keyCode == KeyEvent.KEYCODE_DPAD_UP || keyCode == KeyEvent.KEYCODE_DPAD_LEFT
+                    || keyCode == KeyEvent.KEYCODE_DPAD_RIGHT;
+        });
+        ((ImageView) findViewById(R.id.avatar)).setImageDrawable(Avatar.make(getResources(),
+                getExternalFilesDir(null), greetingName, greeting.getTypeface(), density));
         if (advancedEffects) {
             for (View button : new View[]{btnInputs, btnWifi, btnReorder, btnSettings}) {
                 button.setOnFocusChangeListener((view, focused) -> view.animate()
@@ -528,6 +557,7 @@ public class MainActivity extends Activity implements AppAdapter.TileListener {
             opts.inPreferredConfig = android.graphics.Bitmap.Config.RGB_565;   // no alpha needed, half the memory
             android.graphics.Bitmap bmp = android.graphics.BitmapFactory.decodeFile(file.getPath(), opts);
             if (bmp == null) return;
+            LiquidGlass.setWallpaper(bmp, dm.widthPixels, dm.heightPixels);
             android.widget.ImageView wall = new android.widget.ImageView(this);
             wall.setScaleType(android.widget.ImageView.ScaleType.CENTER_CROP);
             wall.setImageBitmap(bmp);
@@ -1378,7 +1408,7 @@ public class MainActivity extends Activity implements AppAdapter.TileListener {
     }
 
     @Override public void onLibraryUp() {
-        if (adapter.appCount() == 0) { btnWifi.requestFocus(); return; }
+        if (adapter.appCount() == 0) { btnStatus.requestFocus(); return; }
         int lastRow = ((adapter.appCount() - 1) / COLUMNS) * COLUMNS;
         focusTile(Math.min(lastRow + lastFocused % COLUMNS, adapter.appCount() - 1));
     }
@@ -1434,7 +1464,7 @@ public class MainActivity extends Activity implements AppAdapter.TileListener {
         cancelPendingFocusScroll();
         if (adapter.appCount() == 0) {
             if (adapter.isLibraryAt(0)) focusLibrary();
-            else btnWifi.requestFocus();
+            else btnStatus.requestFocus();
             return;
         }
         final int pos = adapter.focusablePosition(Math.max(0, Math.min(position, adapter.appCount() - 1)));
@@ -1487,7 +1517,7 @@ public class MainActivity extends Activity implements AppAdapter.TileListener {
             greeting.setTextColor(liftTowardsWhite(festival.accentColor(), 0.25f));
         } else {
             greeting.setText(greetingName.isEmpty() ? getString(res)
-                    : getString(R.string.greeting_with_name, getString(res), greetingName));
+                    : getString(res) + ",\n" + greetingName);
             greeting.setTextColor(greetingColor);
         }
         if (shamsi) shamsiDate.setText(Shamsi.today());
@@ -1651,7 +1681,7 @@ public class MainActivity extends Activity implements AppAdapter.TileListener {
                 }
             }
         }
-        btnInputs.setVisibility(any ? View.VISIBLE : View.GONE);
+        hasInputs = any;
     }
 
     /** The Live TV app's launch intent: its leanback entry point, or the configured action if it has none. */
@@ -1705,7 +1735,7 @@ public class MainActivity extends Activity implements AppAdapter.TileListener {
 
     /** Dropdown menu under the Inputs pill: HDMI ports (with connection state), AV and Live TV. */
     private void showInputs() {
-        View anchor = findViewById(R.id.btnInputs);
+        View anchor = btnStatus;
         View panel = getLayoutInflater().inflate(R.layout.popup_inputs, root, false);
         LinearLayout rows = panel.findViewById(R.id.rows);
 
@@ -1788,12 +1818,49 @@ public class MainActivity extends Activity implements AppAdapter.TileListener {
         panel.measure(View.MeasureSpec.UNSPECIFIED, View.MeasureSpec.UNSPECIFIED);
         popup.setWidth(Math.max(width, Math.min(panel.getMeasuredWidth(), (int) (360 * density))));
 
-        int alignment = getResources().getBoolean(R.bool.rtl_menu_bar) ? Gravity.END : Gravity.START;
-        dropIn(popup, panel, anchor, alignment);
+        dropIn(popup, panel, anchor, Gravity.END);
+        rows.getChildAt(0).requestFocus();
+    }
+
+    /**
+     * tvOS-style control panel: the status pill opens into a glass panel in its place, listing
+     * Inputs, Wi-Fi (with the network name) and Settings.
+     */
+    private void showControlPanel() {
+        View panel = getLayoutInflater().inflate(R.layout.popup_inputs, root, false);
+        LinearLayout rows = panel.findViewById(R.id.rows);
+        int width = Math.max(btnStatus.getWidth(), (int) (250 * density));
+        final PopupWindow popup = glassPopup(panel, width);
+        if (hasInputs) addInputRow(rows, popup, R.drawable.ic_input, getString(R.string.inputs), -1, this::showInputs);
+        CharSequence network = btnWifi.getText();
+        addInputRow(rows, popup, R.drawable.ic_wifi,
+                network == null || network.length() == 0 ? getString(R.string.wifi) : network.toString(), -1,
+                this::openNetworkPill);
+        addInputRow(rows, popup, R.drawable.ic_settings, getString(R.string.settings), -1,
+                () -> open(systemIntent(Settings.ACTION_SETTINGS)));
+        // Hold OK on Settings: the launcher's own menu, as on the old Settings pill.
+        View settingsRow = rows.getChildAt(rows.getChildCount() - 1);
+        settingsRow.setOnLongClickListener(v -> {
+            popup.dismiss();
+            showSettingsMenu();
+            return true;
+        });
+        panel.measure(View.MeasureSpec.UNSPECIFIED, View.MeasureSpec.UNSPECIFIED);
+        popup.setWidth(Math.max(width, Math.min(panel.getMeasuredWidth(), (int) (360 * density))));
+        // Open over the pill, top edges together, so the pill seems to grow into the panel.
+        panel.setAlpha(0f);
+        panel.setPivotY(0f);
+        panel.setPivotX(width);
+        panel.setScaleX(0.9f);
+        panel.setScaleY(0.6f);
+        popup.showAsDropDown(btnStatus, 0, -btnStatus.getHeight(), Gravity.END);
+        panel.animate().alpha(1f).scaleX(1f).scaleY(1f).setDuration(240)
+                .setInterpolator(new android.view.animation.DecelerateInterpolator(1.8f)).start();
         rows.getChildAt(0).requestFocus();
     }
 
     private PopupWindow glassPopup(View panel, int width) {
+        panel.setBackground(new LiquidGlass.PillDrawable(panel, null, density, 24 * density));
         final PopupWindow popup = new PopupWindow(panel, width, ViewGroup.LayoutParams.WRAP_CONTENT, true);
         popup.setBackgroundDrawable(new ColorDrawable(Color.TRANSPARENT));   // needed for Back to dismiss
         popup.setOutsideTouchable(true);
@@ -1855,7 +1922,7 @@ public class MainActivity extends Activity implements AppAdapter.TileListener {
 
     /** Keep a normal Settings click for the TV; the launcher's choices live behind hold OK. */
     private void showSettingsMenu() {
-        View anchor = findViewById(R.id.btnSettings);
+        View anchor = btnStatus;
         View panel = getLayoutInflater().inflate(R.layout.popup_inputs, root, false);
         LinearLayout rows = panel.findViewById(R.id.rows);
         PopupWindow popup = glassPopup(panel, (int) (200 * density));
@@ -1997,7 +2064,7 @@ public class MainActivity extends Activity implements AppAdapter.TileListener {
     }
 
     private void showModuleCardsNow() {
-        View anchor = findViewById(R.id.btnSettings);
+        View anchor = btnStatus;
         View panel = getLayoutInflater().inflate(R.layout.popup_cards, root, false);
         LinearLayout rows = panel.findViewById(R.id.rows);
         final PopupWindow popup = glassPopup(panel, (int) (400 * density));

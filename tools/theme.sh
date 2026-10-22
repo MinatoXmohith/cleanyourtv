@@ -45,6 +45,12 @@ if [ -f "$THEME/wallpaper.jpg" ]; then
 else
   tv "rm -f $DIR/wallpaper.jpg" >/dev/null
 fi
+# Profile photo for the status pill; without one the pill shows initials.
+if [ -f "$THEME/avatar.jpg" ]; then
+  "$PY" -I b64push.py "$THEME/avatar.jpg" "$DIR/avatar.jpg"
+else
+  tv "rm -f $DIR/avatar.jpg" >/dev/null
+fi
 tv "printf '%s' '$REVISION' > $DIR/theme_revision" >/dev/null
 tv "$RESTART; echo applied" | tail -n 1
 echo "Theme $(basename "$THEME") is on the TV. Undo with: tools/theme.sh --reset"

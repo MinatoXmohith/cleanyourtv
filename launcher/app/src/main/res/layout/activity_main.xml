@@ -62,19 +62,45 @@
                     android:gravity="left"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
+                    android:maxLines="2"
+                    android:ellipsize="end"
+                    android:layout_marginStart="2dp"
+                    android:textColor="#FFFFFFFF"
+                    android:textSize="25sp"
+                    android:fontFamily="@font/outfit_semibold"
+                    android:letterSpacing="0.03"
+                    android:lineSpacingMultiplier="0.98"
+                    android:includeFontPadding="false"
+                    android:shadowColor="#66000000"
+                    android:shadowRadius="10"
+                    android:textAllCaps="true" />
+
+                <!-- Date under the greeting (the big clock moved into the status pill, top right). -->
+                <TextClock
+                    android:id="@+id/date"
+                    android:gravity="left"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginStart="2dp"
+                    android:layout_marginTop="7dp"
                     android:singleLine="true"
                     android:ellipsize="end"
-                    android:layout_marginStart="4dp"
-                    android:textColor="#8CFFFFFF"
-                    android:textSize="12sp"
+                    android:format12Hour="@string/date_format_home"
+                    android:format24Hour="@string/date_format_home"
+                    android:textColor="#D9FFFFFF"
+                    android:textSize="13sp"
                     android:fontFamily="@font/outfit_medium"
-                    android:letterSpacing="0.22"
+                    android:letterSpacing="0.06"
+                    android:shadowColor="#66000000"
+                    android:shadowRadius="8"
                     android:textAllCaps="true" />
 
                 <LinearLayout
+                    android:id="@+id/clockRow"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:orientation="horizontal"
+                    android:visibility="gone"
                     android:baselineAligned="true">
 
                     <TextClock
@@ -136,22 +162,7 @@
                             android:includeFontPadding="false"
                             android:visibility="gone" />
 
-                        <TextClock
-                            android:id="@+id/date"
-                            android:gravity="left"
-                            android:layout_width="match_parent"
-                            android:layout_height="wrap_content"
-                            android:singleLine="@bool/date_single_line"
-                            android:maxLines="2"
-                            android:lineSpacingExtra="6dp"
-                            android:ellipsize="end"
-                            android:format12Hour="@string/date_format_home"
-                            android:format24Hour="@string/date_format_home"
-                            android:textColor="#A6FFFFFF"
-                            android:textSize="14sp"
-                            android:fontFamily="@font/outfit_regular"
-                            android:letterSpacing="0.14"
-                            android:textAllCaps="true" />
+                        <!-- date moved under the greeting -->
                     </LinearLayout>
                 </LinearLayout>
 
@@ -177,13 +188,48 @@
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:layout_alignParentEnd="true"
-                android:layout_alignBottom="@id/leftBlock"
-                android:layout_marginBottom="6dp"
+                android:layout_alignTop="@id/leftBlock"
                 android:orientation="horizontal">
+
+                <LinearLayout
+                    android:id="@+id/btnStatus"
+                    android:layout_width="wrap_content"
+                    android:layout_height="46dp"
+                    android:paddingStart="18dp"
+                    android:paddingEnd="5dp"
+                    android:gravity="center_vertical"
+                    android:orientation="horizontal"
+                    android:focusable="true"
+                    android:clickable="true"
+                    android:background="@drawable/pill_bg"
+                    android:contentDescription="@string/settings">
+
+                    <TextClock
+                        android:id="@+id/statusClock"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:duplicateParentState="true"
+                        android:format12Hour="h:mm a"
+                        android:format24Hour="HH:mm"
+                        android:textColor="@drawable/pill_text"
+                        android:textSize="17sp"
+                        android:fontFamily="@font/outfit_medium"
+                        android:letterSpacing="0.01"
+                        android:includeFontPadding="false" />
+
+                    <ImageView
+                        android:id="@+id/avatar"
+                        android:layout_width="36dp"
+                        android:layout_height="36dp"
+                        android:layout_marginStart="11dp"
+                        android:duplicateParentState="true"
+                        android:importantForAccessibility="no" />
+                </LinearLayout>
 
                 <TextView
                     android:id="@+id/btnInputs"
                     style="@style/TopButton"
+                    android:visibility="gone"
                     android:text="@string/inputs"
                     android:drawableStart="@drawable/ic_input"
                     android:nextFocusDown="@+id/grid" />
@@ -191,6 +237,7 @@
                 <TextView
                     android:id="@+id/btnWifi"
                     style="@style/TopButton"
+                    android:visibility="gone"
                     android:maxWidth="180dp"
                     android:singleLine="true"
                     android:ellipsize="end"
@@ -208,6 +255,7 @@
                 <TextView
                     android:id="@+id/btnSettings"
                     style="@style/TopButton"
+                    android:visibility="gone"
                     android:text="@string/settings"
                     android:drawableStart="@drawable/ic_settings"
                     android:nextFocusDown="@+id/grid" />
