@@ -1,0 +1,189 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Dashboard home, tvOS 2026 style (mkdziner design, Frame 1). Positions in dp on a 960x540 dp TV screen. -->
+<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:id="@+id/dashRoot"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="#FF000000">
+
+    <TextView
+        android:id="@+id/hello"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginStart="36dp"
+        android:layout_marginTop="34dp"
+        android:textColor="#FFFFFFFF"
+        android:textSize="19sp"
+        android:fontFamily="@font/outfit_semibold"
+        android:letterSpacing="0.03"
+        android:shadowColor="#80000000"
+        android:shadowRadius="10"
+        android:textAllCaps="true" />
+
+    <LinearLayout
+        android:id="@+id/btnStatus"
+        android:layout_width="wrap_content"
+        android:layout_height="46dp"
+        android:layout_gravity="top|end"
+        android:layout_marginTop="24dp"
+        android:layout_marginEnd="36dp"
+        android:paddingStart="18dp"
+        android:paddingEnd="5dp"
+        android:gravity="center_vertical"
+        android:orientation="horizontal"
+        android:focusable="true"
+        android:clickable="true"
+        android:background="@drawable/pill_bg"
+        android:contentDescription="@string/settings">
+
+        <TextClock
+            android:id="@+id/statusClock"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:duplicateParentState="true"
+            android:format12Hour="h:mm a"
+            android:format24Hour="HH:mm"
+            android:textColor="@drawable/pill_text"
+            android:textSize="17sp"
+            android:fontFamily="@font/outfit_medium"
+            android:shadowColor="#73000000"
+            android:shadowRadius="6"
+            android:includeFontPadding="false" />
+
+        <ImageView
+            android:id="@+id/avatar"
+            android:layout_width="36dp"
+            android:layout_height="36dp"
+            android:layout_marginStart="11dp"
+            android:duplicateParentState="true"
+            android:importantForAccessibility="no" />
+    </LinearLayout>
+
+    <!-- Glass rail: Home, Search, Settings -->
+    <LinearLayout
+        android:id="@+id/rail"
+        android:layout_width="66dp"
+        android:layout_height="300dp"
+        android:layout_marginStart="36dp"
+        android:layout_marginTop="140dp"
+        android:gravity="center"
+        android:orientation="vertical">
+
+        <ImageView android:id="@+id/railHome" android:layout_width="48dp" android:layout_height="48dp"
+            android:padding="12dp" android:src="@drawable/ic_home" android:tint="@drawable/pill_text"
+            android:background="@drawable/rail_btn_bg" android:focusable="true" android:clickable="true"
+            android:contentDescription="Home" />
+        <ImageView android:id="@+id/railSearch" android:layout_width="48dp" android:layout_height="48dp"
+            android:layout_marginTop="44dp"
+            android:padding="12dp" android:src="@drawable/ic_search" android:tint="@drawable/pill_text"
+            android:background="@drawable/rail_btn_bg" android:focusable="true" android:clickable="true"
+            android:contentDescription="Search" />
+        <ImageView android:id="@+id/railSettings" android:layout_width="48dp" android:layout_height="48dp"
+            android:layout_marginTop="44dp"
+            android:padding="12dp" android:src="@drawable/ic_settings" android:tint="@drawable/pill_text"
+            android:background="@drawable/rail_btn_bg" android:focusable="true" android:clickable="true"
+            android:contentDescription="@string/settings" />
+    </LinearLayout>
+
+    <!-- Music player card -->
+    <LinearLayout
+        android:id="@+id/musicCard"
+        android:layout_width="330dp"
+        android:layout_height="160dp"
+        android:layout_marginStart="158dp"
+        android:layout_marginTop="98dp"
+        android:padding="16dp"
+        android:gravity="center_vertical"
+        android:orientation="horizontal">
+
+        <ImageView
+            android:id="@+id/musicArt"
+            android:layout_width="120dp"
+            android:layout_height="120dp"
+            android:scaleType="centerCrop"
+            android:importantForAccessibility="no" />
+
+        <LinearLayout
+            android:layout_width="0dp"
+            android:layout_weight="1"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="16dp"
+            android:orientation="vertical">
+
+            <TextView android:id="@+id/musicLabel" android:layout_width="wrap_content" android:layout_height="wrap_content"
+                android:text="NOW PLAYING" android:textColor="#B3FFFFFF" android:textSize="11sp"
+                android:fontFamily="@font/outfit_medium" android:letterSpacing="0.14" />
+            <TextView android:id="@+id/musicTitle" android:layout_width="match_parent" android:layout_height="wrap_content"
+                android:layout_marginTop="4dp" android:maxLines="2" android:ellipsize="end"
+                android:textColor="#FFFFFFFF" android:textSize="18sp" android:fontFamily="@font/outfit_semibold"
+                android:shadowColor="#66000000" android:shadowRadius="6" />
+            <TextView android:id="@+id/musicArtist" android:layout_width="match_parent" android:layout_height="wrap_content"
+                android:singleLine="true" android:ellipsize="end"
+                android:textColor="#D9FFFFFF" android:textSize="13sp" android:fontFamily="@font/outfit_regular" />
+
+            <LinearLayout android:layout_width="wrap_content" android:layout_height="wrap_content"
+                android:layout_marginTop="6dp" android:orientation="horizontal">
+                <ImageView android:id="@+id/musicPrev" android:layout_width="38dp" android:layout_height="38dp"
+                    android:padding="8dp" android:src="@drawable/ic_prev" android:tint="@drawable/pill_text"
+                    android:background="@drawable/rail_btn_bg" android:focusable="true" android:clickable="true"
+                    android:contentDescription="Previous" />
+                <ImageView android:id="@+id/musicPlay" android:layout_width="38dp" android:layout_height="38dp"
+                    android:layout_marginStart="10dp"
+                    android:padding="8dp" android:src="@drawable/ic_play" android:tint="@drawable/pill_text"
+                    android:background="@drawable/rail_btn_bg" android:focusable="true" android:clickable="true"
+                    android:contentDescription="Play or pause" />
+                <ImageView android:id="@+id/musicNext" android:layout_width="38dp" android:layout_height="38dp"
+                    android:layout_marginStart="10dp"
+                    android:padding="8dp" android:src="@drawable/ic_next" android:tint="@drawable/pill_text"
+                    android:background="@drawable/rail_btn_bg" android:focusable="true" android:clickable="true"
+                    android:contentDescription="Next" />
+            </LinearLayout>
+        </LinearLayout>
+    </LinearLayout>
+
+    <!-- Date, weather, location -->
+    <LinearLayout
+        android:id="@+id/dateCard"
+        android:layout_width="330dp"
+        android:layout_height="160dp"
+        android:layout_marginStart="158dp"
+        android:layout_marginTop="284dp"
+        android:paddingStart="22dp"
+        android:paddingEnd="22dp"
+        android:gravity="center_vertical"
+        android:orientation="vertical">
+
+        <TextClock android:id="@+id/dashDate" android:layout_width="wrap_content" android:layout_height="wrap_content"
+            android:format12Hour="EEEE d MMMM" android:format24Hour="EEEE d MMMM"
+            android:textColor="#FFFFFFFF" android:textSize="20sp" android:fontFamily="@font/outfit_semibold"
+            android:letterSpacing="0.02" android:textAllCaps="true" android:shadowColor="#66000000" android:shadowRadius="6" />
+        <TextView android:id="@+id/weatherNow" android:layout_width="match_parent" android:layout_height="wrap_content"
+            android:layout_marginTop="10dp" android:singleLine="true" android:ellipsize="end"
+            android:textColor="#FFFFFFFF" android:textSize="18sp" android:fontFamily="@font/outfit_medium"
+            android:shadowColor="#66000000" android:shadowRadius="6" />
+        <TextView android:id="@+id/weatherCity" android:layout_width="match_parent" android:layout_height="wrap_content"
+            android:layout_marginTop="4dp" android:singleLine="true" android:ellipsize="end"
+            android:textColor="#CCFFFFFF" android:textSize="13sp" android:fontFamily="@font/outfit_medium"
+            android:letterSpacing="0.12" android:textAllCaps="true" />
+    </LinearLayout>
+
+    <!-- Apps: 7 favourites + All apps -->
+    <GridLayout
+        android:id="@+id/appsPanel"
+        android:layout_width="330dp"
+        android:layout_height="346dp"
+        android:layout_marginStart="548dp"
+        android:layout_marginTop="98dp"
+        android:padding="16dp"
+        android:columnCount="2"
+        android:rowCount="4"
+        android:useDefaultMargins="false" />
+
+    <!-- Featured / Movies / Shows -->
+    <TextView android:id="@+id/pillFeatured" style="@style/TopButton" android:layout_width="120dp" android:layout_height="44dp"
+        android:layout_marginStart="158dp" android:layout_marginTop="474dp" android:text="FEATURED" />
+    <TextView android:id="@+id/pillMovies" style="@style/TopButton" android:layout_width="120dp" android:layout_height="44dp"
+        android:layout_marginStart="420dp" android:layout_marginTop="474dp" android:text="MOVIES" />
+    <TextView android:id="@+id/pillShows" style="@style/TopButton" android:layout_width="120dp" android:layout_height="44dp"
+        android:layout_marginStart="683dp" android:layout_marginTop="474dp" android:text="SHOWS" />
+</FrameLayout>

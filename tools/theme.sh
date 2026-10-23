@@ -27,7 +27,7 @@ tv() { "$PY" -I tv.py "$@"; }
 # list back. Writing the same list back is not enough: the force-stop also turns accessibility_enabled off,
 # and the service only binds again once the list changes. So restart first, then clear the list, write it
 # back and switch accessibility on again as build-and-install does.
-RESTART="a=\$(settings get secure enabled_accessibility_services); am force-stop $PKG; am start -n $PKG/.MainActivity >/dev/null; case \"\$a\" in *$PKG*) sleep 1; settings put secure enabled_accessibility_services ''; settings put secure enabled_accessibility_services \"\$a\"; settings put secure accessibility_enabled 1 ;; esac"
+RESTART="a=\$(settings get secure enabled_accessibility_services); am force-stop $PKG; am start -n $PKG/.DashboardActivity >/dev/null; case \"\$a\" in *$PKG*) sleep 1; settings put secure enabled_accessibility_services ''; settings put secure enabled_accessibility_services \"\$a\"; settings put secure accessibility_enabled 1 ;; esac"
 
 if [ "${1:-}" = --reset ]; then
   tv "mkdir -p $DIR; rm -f $DIR/config.json $DIR/wallpaper.jpg; printf '%s' '$REVISION' > $DIR/theme_revision; $RESTART; echo reset" | tail -n 1
@@ -44,6 +44,10 @@ if [ -f "$THEME/wallpaper.jpg" ]; then
   "$PY" -I b64push.py "$THEME/wallpaper.jpg" "$DIR/wallpaper.jpg"
 else
   tv "rm -f $DIR/wallpaper.jpg" >/dev/null
+fi
+# TMDB key for the browse screen; kept out of config.json because themes can be public.
+if [ -f "$THEME/tmdb_key.txt" ]; then
+  tv --push "$THEME/tmdb_key.txt" "$DIR/tmdb_key.txt"
 fi
 # Profile photo for the status pill; without one the pill shows initials.
 if [ -f "$THEME/avatar.jpg" ]; then

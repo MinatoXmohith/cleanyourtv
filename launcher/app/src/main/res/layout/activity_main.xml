@@ -215,6 +215,8 @@
                         android:textSize="17sp"
                         android:fontFamily="@font/outfit_medium"
                         android:letterSpacing="0.01"
+                        android:shadowColor="#73000000"
+                        android:shadowRadius="6"
                         android:includeFontPadding="false" />
 
                     <ImageView

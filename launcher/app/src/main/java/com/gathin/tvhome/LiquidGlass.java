@@ -24,7 +24,7 @@ import android.view.View;
  */
 final class LiquidGlass {
 
-    private static final int SCALE = 8;           // backdrop is 1/8 of the screen, then box blurred
+    private static final int SCALE = 3;           // backdrop is 1/3 of the screen with a light blur: clear glass
     private static Bitmap backdrop;
     private static float backdropScale;
 
@@ -48,7 +48,7 @@ final class LiquidGlass {
             c.drawBitmap(wall, m, new Paint(Paint.FILTER_BITMAP_FLAG));
             int[] px = new int[bw * bh];
             small.getPixels(px, 0, bw, 0, 0, bw, bh);
-            for (int pass = 0; pass < 3; pass++) boxBlur(px, bw, bh, 3);
+            for (int pass = 0; pass < 2; pass++) boxBlur(px, bw, bh, 2);
             small.setPixels(px, 0, bw, 0, 0, bw, bh);
             backdrop = small;
             backdropScale = (float) screenW / bw;
@@ -91,74 +91,103 @@ final class LiquidGlass {
         }
     }
 
-    /** Paints for one glass shape; reused across frames. */
+    /**
+     * Paints for one glass shape, reused across frames. Apple-style clear glass: the backdrop lightly blurred and
+     * barely tinted, a lens ring along the inner edge that shows the backdrop slightly magnified, a specular rim
+     * brightest at the top-left and bottom-right, and a soft inner highlight along the top.
+     */
     static final class Painter {
         private final float density;
-        private final Paint blur = new Paint(Paint.ANTI_ALIAS_FLAG | Paint.FILTER_BITMAP_FLAG);
+        private final Paint body = new Paint(Paint.ANTI_ALIAS_FLAG | Paint.FILTER_BITMAP_FLAG);
+        private final Paint lens = new Paint(Paint.ANTI_ALIAS_FLAG | Paint.FILTER_BITMAP_FLAG);
         private final Paint tint = new Paint(Paint.ANTI_ALIAS_FLAG);
-        private final Paint sheen = new Paint(Paint.ANTI_ALIAS_FLAG);
+        private final Paint lensLight = new Paint(Paint.ANTI_ALIAS_FLAG);
         private final Paint rim = new Paint(Paint.ANTI_ALIAS_FLAG);
+        private final Paint topGlow = new Paint(Paint.ANTI_ALIAS_FLAG);
         private final Paint shade = new Paint(Paint.ANTI_ALIAS_FLAG);
-        private final Matrix matrix = new Matrix();
+        private final Matrix bodyM = new Matrix(), lensM = new Matrix();
         private final RectF inner = new RectF();
         private Bitmap shaderFor;
-        private BitmapShader shader;
-        private float lastTop = Float.NaN, lastBottom = Float.NaN;
+        private BitmapShader bodyShader, lensShader;
+        private RectF last = new RectF();
 
         Painter(float density) {
+            this(density, 0x10000000);
+        }
+
+        /** tintArgb: a light veil over the glass; darker for panels that carry white text. */
+        Painter(float density, int tintArgb) {
             this.density = density;
-            // Slightly darker and more saturated than the wallpaper: white text stays readable on bright art.
             ColorMatrix cm = new ColorMatrix();
-            cm.setSaturation(1.35f);
-            ColorMatrix dim = new ColorMatrix();
-            dim.setScale(0.72f, 0.72f, 0.72f, 1f);
-            cm.postConcat(dim);
-            blur.setColorFilter(new ColorMatrixColorFilter(cm));
-            tint.setColor(0x1AFFFFFF);
+            cm.setSaturation(1.15f);
+            ColorMatrix lift = new ColorMatrix();
+            lift.setScale(1.04f, 1.04f, 1.04f, 1f);
+            cm.postConcat(lift);
+            body.setColorFilter(new ColorMatrixColorFilter(cm));
+            lens.setColorFilter(new ColorMatrixColorFilter(cm));
+            lens.setStyle(Paint.Style.STROKE);
+            tint.setColor(tintArgb);
+            lensLight.setStyle(Paint.Style.STROKE);
+            lensLight.setColor(0x1CFFFFFF);
             rim.setStyle(Paint.Style.STROKE);
-            rim.setStrokeWidth(1.4f * density);
+            rim.setStrokeWidth(1.3f * density);
+            topGlow.setStyle(Paint.Style.STROKE);
+            topGlow.setStrokeWidth(2.5f * density);
             shade.setStyle(Paint.Style.STROKE);
             shade.setStrokeWidth(1f * density);
-            shade.setColor(0x33000000);
+            shade.setColor(0x40000000);
         }
 
         /**
          * Draws glass in rect (canvas coordinates). originX/originY is where the canvas's (0,0) sits on the
-         * screen, so the blurred wallpaper lines up with the real one behind.
+         * screen, so the backdrop lines up with the real wallpaper behind.
          */
         void draw(Canvas c, RectF rect, float radius, float originX, float originY) {
+            float ring = Math.min(8f * density, rect.height() * 0.22f);
             Bitmap b = backdrop;
             if (b != null) {
                 if (shaderFor != b) {
-                    shader = new BitmapShader(b, Shader.TileMode.CLAMP, Shader.TileMode.CLAMP);
-                    blur.setShader(shader);
+                    bodyShader = new BitmapShader(b, Shader.TileMode.CLAMP, Shader.TileMode.CLAMP);
+                    lensShader = new BitmapShader(b, Shader.TileMode.CLAMP, Shader.TileMode.CLAMP);
+                    body.setShader(bodyShader);
+                    lens.setShader(lensShader);
                     shaderFor = b;
                 }
-                matrix.setScale(backdropScale, backdropScale);
-                matrix.postTranslate(-originX, -originY);
-                shader.setLocalMatrix(matrix);
-                c.drawRoundRect(rect, radius, radius, blur);
-            } else {
-                tint.setColor(0x14FFFFFF);
+                bodyM.setScale(backdropScale, backdropScale);
+                bodyM.postTranslate(-originX, -originY);
+                bodyShader.setLocalMatrix(bodyM);
+                c.drawRoundRect(rect, radius, radius, body);
+                // Lens: the same backdrop magnified about the glass centre, seen only in a ring at the edge.
+                float k = 1.0f + Math.min(0.12f, 18f * density / Math.max(rect.width(), 1f));
+                lensM.set(bodyM);
+                lensM.postScale(k, k, rect.centerX(), rect.centerY());
+                lensShader.setLocalMatrix(lensM);
+                lens.setStrokeWidth(ring);
+                inner.set(rect);
+                inner.inset(ring / 2f, ring / 2f);
+                c.drawRoundRect(inner, Math.max(0, radius - ring / 2f), Math.max(0, radius - ring / 2f), lens);
             }
             c.drawRoundRect(rect, radius, radius, tint);
-            if (rect.top != lastTop || rect.bottom != lastBottom) {
-                float h = rect.height();
-                sheen.setShader(new LinearGradient(0, rect.top, 0, rect.top + h * 0.6f,
-                        0x40FFFFFF, 0x00FFFFFF, Shader.TileMode.CLAMP));
-                rim.setShader(new LinearGradient(0, rect.top, 0, rect.bottom,
-                        new int[]{0xD9FFFFFF, 0x26FFFFFF, 0x59FFFFFF}, new float[]{0f, 0.55f, 1f},
+            lensLight.setStrokeWidth(ring);
+            inner.set(rect);
+            inner.inset(ring / 2f, ring / 2f);
+            c.drawRoundRect(inner, Math.max(0, radius - ring / 2f), Math.max(0, radius - ring / 2f), lensLight);
+            if (!rect.equals(last)) {
+                rim.setShader(new LinearGradient(rect.left, rect.top, rect.right, rect.bottom,
+                        new int[]{0xF2FFFFFF, 0x40FFFFFF, 0x26FFFFFF, 0xBFFFFFFF}, new float[]{0f, 0.4f, 0.62f, 1f},
                         Shader.TileMode.CLAMP));
-                lastTop = rect.top;
-                lastBottom = rect.bottom;
+                topGlow.setShader(new LinearGradient(0, rect.top, 0, rect.top + rect.height() * 0.35f,
+                        0x66FFFFFF, 0x00FFFFFF, Shader.TileMode.CLAMP));
+                last.set(rect);
             }
-            c.drawRoundRect(rect, radius, radius, sheen);
-            // A hairline of shadow just outside the rim lifts the glass off bright wallpaper.
             inner.set(rect);
             inner.inset(-0.5f * density, -0.5f * density);
             c.drawRoundRect(inner, radius + 0.5f * density, radius + 0.5f * density, shade);
             inner.set(rect);
-            inner.inset(0.7f * density, 0.7f * density);
+            inner.inset(2.2f * density, 2.2f * density);
+            c.drawRoundRect(inner, Math.max(0, radius - 2.2f * density), Math.max(0, radius - 2.2f * density), topGlow);
+            inner.set(rect);
+            inner.inset(0.65f * density, 0.65f * density);
             c.drawRoundRect(inner, radius, radius, rim);
         }
     }
@@ -185,7 +214,8 @@ final class LiquidGlass {
         PillDrawable(View host, Drawable original, float density, float radius) {
             this.host = host;
             this.original = original != null ? original : new android.graphics.drawable.ColorDrawable(0);
-            this.painter = new Painter(density);
+            // Panels (fixed radius) carry rows of white text, so they get a darker veil than the pills.
+            this.painter = radius > 0 ? new Painter(density, 0x47000000) : new Painter(density, 0x1A000000);
             this.radius = radius;
         }
 
@@ -232,6 +262,70 @@ final class LiquidGlass {
         public void setColorFilter(ColorFilter cf) {
             original.setColorFilter(cf);
         }
+
+        @Override
+        public int getOpacity() {
+            return PixelFormat.TRANSLUCENT;
+        }
+    }
+
+    /**
+     * Background for a glass card or panel that stays glass when focused: focus adds a bright white outline
+     * and a little more light instead of turning solid white like the pills.
+     */
+    static final class CardDrawable extends Drawable {
+        private final View host;
+        private final Painter painter;
+        private final float radius, density;
+        private final RectF rect = new RectF();
+        private final int[] loc = new int[2];
+        private final Paint ring = new Paint(Paint.ANTI_ALIAS_FLAG);
+        private final Paint lift = new Paint(Paint.ANTI_ALIAS_FLAG);
+        private boolean focused;
+
+        CardDrawable(View host, float density, float radius, int tintArgb) {
+            this.host = host;
+            this.density = density;
+            this.radius = radius;
+            this.painter = new Painter(density, tintArgb);
+            ring.setStyle(Paint.Style.STROKE);
+            ring.setStrokeWidth(3f * density);
+            ring.setColor(0xF2FFFFFF);
+            lift.setColor(0x1FFFFFFF);
+        }
+
+        @Override
+        public void draw(Canvas c) {
+            rect.set(getBounds());
+            host.getLocationOnScreen(loc);
+            float r = radius > 0 ? radius : rect.height() / 2f;
+            painter.draw(c, rect, r, loc[0], loc[1]);
+            if (focused) {
+                c.drawRoundRect(rect, r, r, lift);
+                rect.inset(1.5f * density, 1.5f * density);
+                c.drawRoundRect(rect, r, r, ring);
+            }
+        }
+
+        @Override
+        public boolean isStateful() {
+            return true;
+        }
+
+        @Override
+        protected boolean onStateChange(int[] state) {
+            boolean f = false;
+            for (int st : state) if (st == android.R.attr.state_focused) f = true;
+            boolean changed = f != focused;
+            focused = f;
+            return changed;
+        }
+
+        @Override
+        public void setAlpha(int alpha) {}
+
+        @Override
+        public void setColorFilter(ColorFilter cf) {}
 
         @Override
         public int getOpacity() {
