@@ -20,6 +20,9 @@ final class Weather {
         int tempC;
         String text = "";
         String symbol = "";
+        int feelsC, maxC, minC, cloud;
+        double windKmh, uvMax;
+        String windDir = "";
     }
 
     private Weather() {}
@@ -50,16 +53,42 @@ final class Weather {
             }
             JSONObject f = Net.json(String.format(Locale.ROOT,
                     "https://api.open-meteo.com/v1/forecast?latitude=%.4f&longitude=%.4f"
-                            + "&current=temperature_2m,weather_code,is_day&timezone=auto", lat, lon), null);
+                            + "&current=temperature_2m,apparent_temperature,weather_code,is_day,wind_speed_10m,wind_direction_10m,cloud_cover"
+                            + "&daily=temperature_2m_max,temperature_2m_min,uv_index_max&forecast_days=1&timezone=auto",
+                    lat, lon), null);
             JSONObject cur = f.getJSONObject("current");
             Now n = new Now();
             n.city = name;
             n.tempC = (int) Math.round(cur.getDouble("temperature_2m"));
             describe(n, cur.getInt("weather_code"), cur.optInt("is_day", 1) == 1);
+            n.feelsC = (int) Math.round(cur.optDouble("apparent_temperature", n.tempC));
+            n.windKmh = cur.optDouble("wind_speed_10m", 0);
+            n.windDir = compass(cur.optDouble("wind_direction_10m", 0));
+            n.cloud = cur.optInt("cloud_cover", 0);
+            JSONObject daily = f.optJSONObject("daily");
+            if (daily != null) {
+                n.maxC = (int) Math.round(daily.getJSONArray("temperature_2m_max").getDouble(0));
+                n.minC = (int) Math.round(daily.getJSONArray("temperature_2m_min").getDouble(0));
+                n.uvMax = daily.getJSONArray("uv_index_max").optDouble(0, 0);
+            }
             return n;
         } catch (Exception e) {
             return null;
         }
+    }
+
+    static String compass(double deg) {
+        String[] d = {"N", "NNE", "NE", "ENE", "E", "ESE", "SE", "SSE", "S", "SSW", "SW", "WSW", "W", "WNW", "NW", "NNW"};
+        return d[(int) Math.round(((deg % 360) + 360) % 360 / 22.5) % 16];
+    }
+
+    /** UV index in words, WHO scale. */
+    static String uvWord(double uv) {
+        if (uv < 3) return "Low";
+        if (uv < 6) return "Moderate";
+        if (uv < 8) return "High";
+        if (uv < 11) return "Very high";
+        return "Extreme";
     }
 
     /** WMO weather codes, as Open-Meteo reports them. */

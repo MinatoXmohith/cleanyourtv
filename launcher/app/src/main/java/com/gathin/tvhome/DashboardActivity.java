@@ -19,7 +19,6 @@ import android.view.KeyEvent;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.FrameLayout;
-import android.widget.GridLayout;
 import android.widget.ImageView;
 import android.widget.LinearLayout;
 import android.widget.PopupWindow;
@@ -41,9 +40,11 @@ public class DashboardActivity extends GlassScreen implements NowPlaying.Listene
 
     private FrameLayout root;
     private NowPlaying nowPlaying;
-    private TextView musicTitle, musicArtist, weatherNow, weatherCity;
+    private TextView musicTitle, musicArtist, weatherNow, weatherCity, weatherTemp, weatherIcon, weatherRange;
+    private TextView[] stats;
+    private View tabHome;
     private ImageView musicArt, musicPlay;
-    private GridLayout appsPanel;
+    private LinearLayout appRow;
     private final Handler main = new Handler(Looper.getMainLooper());
     private long weatherAt;
     private View firstApp;
@@ -64,22 +65,17 @@ public class DashboardActivity extends GlassScreen implements NowPlaying.Listene
         ((ImageView) findViewById(R.id.avatar)).setImageDrawable(Avatar.make(getResources(),
                 getExternalFilesDir(null), cfg.greetingName, hello.getTypeface(), density));
 
-        glass(findViewById(R.id.rail), 33, 0x14000000);
-        findViewById(R.id.railHome).setOnClickListener(v -> focusFirstApp());
-        findViewById(R.id.railSearch).setOnClickListener(v -> search(null));
-        View railSettings = findViewById(R.id.railSettings);
-        railSettings.setOnClickListener(v -> open(new Intent(Settings.ACTION_SETTINGS)));
-        railSettings.setOnLongClickListener(v -> {
-            startActivity(new Intent(this, LauncherSettingsActivity.class));
-            return true;
-        });
+        tabHome = findViewById(R.id.tabHome);
+        tabHome.setSelected(true);
+        tabHome.setOnClickListener(v -> focusFirstApp());
+        findViewById(R.id.tabApps).setOnClickListener(v -> startActivity(new Intent(this, MainActivity.class)));
 
-        glass(findViewById(R.id.musicCard), 22, 0x24000000);
+        glass(findViewById(R.id.musicCard), 24, 0x24000000);
         musicTitle = findViewById(R.id.musicTitle);
         musicArtist = findViewById(R.id.musicArtist);
         musicArt = findViewById(R.id.musicArt);
         musicPlay = findViewById(R.id.musicPlay);
-        round(musicArt, 14);
+        round(musicArt, 16);
         findViewById(R.id.musicPrev).setOnClickListener(v -> nowPlaying.previous());
         findViewById(R.id.musicNext).setOnClickListener(v -> nowPlaying.next());
         musicPlay.setOnClickListener(v -> {
@@ -87,20 +83,17 @@ public class DashboardActivity extends GlassScreen implements NowPlaying.Listene
             else openPackage(defaultMusicApp());
         });
 
-        glass(findViewById(R.id.dateCard), 22, 0x24000000);
+        glass(findViewById(R.id.weatherMain), 24, 0x2E000000);
+        glass(findViewById(R.id.weatherStats), 24, 0x1A000000);
         weatherNow = findViewById(R.id.weatherNow);
         weatherCity = findViewById(R.id.weatherCity);
+        weatherTemp = findViewById(R.id.weatherTemp);
+        weatherIcon = findViewById(R.id.weatherIcon);
+        weatherRange = findViewById(R.id.weatherRange);
+        stats = new TextView[]{findViewById(R.id.stat0), findViewById(R.id.stat1), findViewById(R.id.stat2), findViewById(R.id.stat3)};
 
-        appsPanel = findViewById(R.id.appsPanel);
-        glass(appsPanel, 24, 0x14000000);
+        appRow = findViewById(R.id.appRow);
         buildApps();
-
-        for (int[] p : new int[][]{{R.id.pillFeatured, 0}, {R.id.pillMovies, 1}, {R.id.pillShows, 2}}) {
-            View v = findViewById(p[0]);
-            pill(v);
-            String kind = p[1] == 0 ? "featured" : p[1] == 1 ? "movies" : "shows";
-            v.setOnClickListener(x -> startActivity(new Intent(this, BrowseActivity.class).putExtra("kind", kind)));
-        }
 
         nowPlaying = new NowPlaying(this, this);
         root.post(this::focusFirstApp);
@@ -197,8 +190,15 @@ public class DashboardActivity extends GlassScreen implements NowPlaying.Listene
                     return;
                 }
                 weatherAt = System.currentTimeMillis();
-                weatherNow.setText(w.symbol + "  " + w.tempC + "°C  ·  " + w.text);
+                weatherTemp.setText(w.tempC + "\u00b0");
+                weatherIcon.setText(w.symbol);
+                weatherNow.setText(w.text);
+                weatherRange.setText("Day " + w.maxC + "\u00b0  \u00b7  Night " + w.minC + "\u00b0");
                 weatherCity.setText(w.city);
+                stats[0].setText(w.feelsC + "\u00b0C");
+                stats[1].setText(Weather.uvWord(w.uvMax) + " " + Math.round(w.uvMax));
+                stats[2].setText(w.windDir + " " + Math.round(w.windKmh) + " km/h");
+                stats[3].setText(w.cloud + "%");
             });
         });
     }
@@ -207,9 +207,8 @@ public class DashboardActivity extends GlassScreen implements NowPlaying.Listene
     private void buildApps() {
         PackageManager pm = getPackageManager();
         Intent q = new Intent(Intent.ACTION_MAIN).addCategory(Intent.CATEGORY_LEANBACK_LAUNCHER);
-        List<ResolveInfo> all = pm.queryIntentActivities(q, 0);
         List<ResolveInfo> apps = new ArrayList<>();
-        for (ResolveInfo ri : all) {
+        for (ResolveInfo ri : pm.queryIntentActivities(q, 0)) {
             String p = ri.activityInfo.packageName;
             if (p.equals(getPackageName()) || cfg.hiddenApps.contains(p)) continue;
             apps.add(ri);
@@ -221,71 +220,53 @@ public class DashboardActivity extends GlassScreen implements NowPlaying.Listene
             if (ia != ib) return ia - ib;
             return String.valueOf(a.loadLabel(pm)).compareToIgnoreCase(String.valueOf(b.loadLabel(pm)));
         });
-        appsPanel.removeAllViews();
-        int tileW = (int) (139 * density), tileH = (int) (70 * density), gap = (int) (8 * density);
-        for (int i = 0; i < 8; i++) {
+        appRow.removeAllViews();
+        int n = Math.min(5, apps.size());
+        int tileW = (int) (152 * density), gap = (int) ((856 - 5 * 152) / 4f * density);
+        for (int i = 0; i < n; i++) {
+            ResolveInfo ri = apps.get(i);
             FrameLayout tile = new FrameLayout(this);
             tile.setFocusable(true);
             tile.setClickable(true);
             ImageView img = new ImageView(this);
             img.setScaleType(ImageView.ScaleType.CENTER_CROP);
-            tile.addView(img, new FrameLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT,
-                    ViewGroup.LayoutParams.MATCH_PARENT));
-            if (i < 7 && i < apps.size()) {
-                ResolveInfo ri = apps.get(i);
-                Drawable banner = ri.activityInfo.loadBanner(pm);
-                if (banner == null) banner = ri.activityInfo.applicationInfo.loadBanner(pm);
-                if (banner != null) {
-                    img.setImageDrawable(banner);
-                } else {
-                    img.setImageDrawable(ri.loadIcon(pm));
-                    img.setScaleType(ImageView.ScaleType.FIT_CENTER);
-                    int p = (int) (14 * density);
-                    img.setPadding(p, p, p, p);
-                    img.setBackground(new ColorDrawable(0x40FFFFFF));
-                }
-                String pkg = ri.activityInfo.packageName;
-                tile.setContentDescription(ri.loadLabel(pm));
-                tile.setOnClickListener(v -> openPackage(pkg));
-                if (firstApp == null) firstApp = tile;
+            Drawable banner = ri.activityInfo.loadBanner(pm);
+            if (banner == null) banner = ri.activityInfo.applicationInfo.loadBanner(pm);
+            if (banner != null) {
+                img.setImageDrawable(banner);
             } else {
-                // All apps: the classic grid screen.
-                LinearLayout box = new LinearLayout(this);
-                box.setOrientation(LinearLayout.HORIZONTAL);
-                box.setGravity(Gravity.CENTER);
-                ImageView icon = new ImageView(this);
-                icon.setImageResource(R.drawable.ic_apps);
-                icon.setImageTintList(getResources().getColorStateList(R.drawable.pill_text, null));
-                icon.setDuplicateParentStateEnabled(true);
-                TextView t = new TextView(this);
-                t.setText("All apps");
-                t.setTextSize(15);
-                t.setTypeface(((TextView) findViewById(R.id.hello)).getTypeface());
-                t.setTextColor(getResources().getColorStateList(R.drawable.pill_text, null));
-                t.setDuplicateParentStateEnabled(true);
-                t.setPadding((int) (8 * density), 0, 0, 0);
-                box.addView(icon, new LinearLayout.LayoutParams((int) (22 * density), (int) (22 * density)));
-                box.addView(t);
-                box.setDuplicateParentStateEnabled(true);
-                tile.removeView(img);
-                tile.addView(box, new FrameLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT,
-                        ViewGroup.LayoutParams.MATCH_PARENT));
-                tile.setBackground(getDrawable(R.drawable.pill_bg));
-                pill(tile);
-                tile.setOnClickListener(v -> startActivity(new Intent(this, MainActivity.class)));
+                img.setImageDrawable(ri.loadIcon(pm));
+                img.setScaleType(ImageView.ScaleType.FIT_CENTER);
+                int p = (int) (16 * density);
+                img.setPadding(p, p, p, p);
+                img.setBackground(new ColorDrawable(0x40FFFFFF));
             }
-            round(tile, 12);
-            if (i < 7) tile.setForeground(getDrawable(R.drawable.focus_ring));
-            tile.setOnFocusChangeListener((v, f) -> v.animate().scaleX(f ? 1.07f : 1f).scaleY(f ? 1.07f : 1f)
-                    .translationZ(f ? 12 * density : 0).setDuration(150).start());
-            GridLayout.LayoutParams lp = new GridLayout.LayoutParams(GridLayout.spec(i / 2), GridLayout.spec(i % 2));
-            lp.width = tileW;
-            lp.height = tileH;
-            lp.setMargins(i % 2 == 0 ? 0 : gap, i < 2 ? 0 : gap, 0, 0);
-            appsPanel.addView(tile, lp);
+            tile.addView(img, new FrameLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT));
+            String pkg = ri.activityInfo.packageName;
+            tile.setContentDescription(ri.loadLabel(pm));
+            tile.setOnClickListener(v -> openPackage(pkg));
+            tile.setForeground(getDrawable(R.drawable.focus_ring));
+            round(tile, 14);
+            tile.setOnFocusChangeListener((v, f) -> v.animate().scaleX(f ? 1.08f : 1f).scaleY(f ? 1.08f : 1f)
+                    .translationZ(f ? 14 * density : 0).setDuration(150).start());
+            // Down from the row: the trending page below.
+            tile.setOnKeyListener((v, code, e) -> {
+                if (e.getAction() == KeyEvent.ACTION_DOWN && code == KeyEvent.KEYCODE_DPAD_DOWN) {
+                    openTrending();
+                    return true;
+                }
+                return false;
+            });
+            LinearLayout.LayoutParams lp = new LinearLayout.LayoutParams(tileW, ViewGroup.LayoutParams.MATCH_PARENT);
+            if (i > 0) lp.leftMargin = gap;
+            appRow.addView(tile, lp);
+            if (i == 0) firstApp = tile;
         }
-        appsPanel.setClipChildren(false);
-        appsPanel.setClipToPadding(false);
+    }
+
+    private void openTrending() {
+        startActivity(new Intent(this, BrowseActivity.class).putExtra("kind", "featured"));
+        overridePendingTransition(R.anim.slide_up_in, R.anim.hold);
     }
 
     // ------------------------------------------------------------------ control panel

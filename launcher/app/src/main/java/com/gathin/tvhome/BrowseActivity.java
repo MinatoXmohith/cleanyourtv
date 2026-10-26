@@ -63,6 +63,13 @@ public class BrowseActivity extends GlassScreen implements NowPlaying.Listener {
             stacks[i].setOnClickListener(v -> {
                 if (shown[k][0] != null) search(shown[k][0].name);
             });
+            stacks[i].setOnKeyListener((v, code, e) -> {
+                if (e.getAction() == KeyEvent.ACTION_DOWN && code == KeyEvent.KEYCODE_DPAD_UP) {
+                    finish();
+                    return true;
+                }
+                return false;
+            });
             stacks[i].setOnLongClickListener(v -> {
                 swap(k);
                 return true;
@@ -86,6 +93,12 @@ public class BrowseActivity extends GlassScreen implements NowPlaying.Listener {
         });
         nowPlaying = new NowPlaying(this, this);
         load(kind);
+    }
+
+    @Override
+    public void finish() {
+        super.finish();
+        overridePendingTransition(R.anim.hold, R.anim.slide_down_out);
     }
 
     @Override
