@@ -274,7 +274,7 @@ public class DashboardActivity extends GlassScreen implements NowPlaying.Listene
         });
         appRow.removeAllViews();
         int n = Math.min(5, apps.size());
-        int tileW = (int) (152 * density), gap = (int) ((856 - 5 * 152) / 4f * density);
+        int tileW = (int) (148 * density), gap = (int) ((836 - 5 * 148) / 4f * density);
         for (int i = 0; i < n; i++) {
             ResolveInfo ri = apps.get(i);
             FrameLayout tile = new FrameLayout(this);
@@ -299,8 +299,12 @@ public class DashboardActivity extends GlassScreen implements NowPlaying.Listene
             tile.setOnClickListener(v -> openPackage(pkg));
             tile.setForeground(getDrawable(R.drawable.focus_ring));
             round(tile, 14);
-            tile.setOnFocusChangeListener((v, f) -> v.animate().scaleX(f ? 1.08f : 1f).scaleY(f ? 1.08f : 1f)
-                    .translationZ(f ? 14 * density : 0).setDuration(150).start());
+            tile.setOnFocusChangeListener((v, f) -> {
+                v.animate().scaleX(f ? 1.1f : 1f).scaleY(f ? 1.1f : 1f).translationY(f ? -4 * density : 0f)
+                        .translationZ(f ? 18 * density : 0).setDuration(170).start();
+                // tvOS: the focused app stands out, the rest of the row steps back a little.
+                appRow.post(this::dimUnfocusedApps);
+            });
             // Down from the row: the trending page below.
             tile.setOnKeyListener((v, code, e) -> {
                 if (e.getAction() == KeyEvent.ACTION_DOWN && code == KeyEvent.KEYCODE_DPAD_DOWN) {
@@ -326,6 +330,15 @@ public class DashboardActivity extends GlassScreen implements NowPlaying.Listene
             } catch (Exception ignored) {
             }
         });
+    }
+
+    private void dimUnfocusedApps() {
+        View focused = appRow.findFocus();
+        for (int i = 0; i < appRow.getChildCount(); i++) {
+            View t = appRow.getChildAt(i);
+            float target = focused == null || t == focused ? 1f : 0.7f;
+            t.animate().alpha(target).setDuration(170).start();
+        }
     }
 
     private void openTrending() {

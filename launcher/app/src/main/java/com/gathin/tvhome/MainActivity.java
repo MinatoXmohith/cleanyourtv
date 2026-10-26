@@ -1520,8 +1520,8 @@ public class MainActivity extends Activity implements AppAdapter.TileListener {
             greeting.setText(festiveGreeting);
             greeting.setTextColor(liftTowardsWhite(festival.accentColor(), 0.25f));
         } else {
-            greeting.setText(greetingName.isEmpty() ? getString(res)
-                    : getString(res) + ",\n" + greetingName);
+            // This grid is the APPS screen now (the dashboard greets); a plain heading keeps the two consistent.
+            greeting.setText("ALL APPS");
             greeting.setTextColor(greetingColor);
         }
         if (shamsi) shamsiDate.setText(Shamsi.today());
