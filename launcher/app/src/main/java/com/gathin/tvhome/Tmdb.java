@@ -33,6 +33,47 @@ final class Tmdb {
 
     private Tmdb() {}
 
+    /** In-memory cache: the browse page opens already filled. Trending changes weekly; refreshed after 3 hours. */
+    private static final java.util.Map<String, List<Genre>> CACHE = new java.util.HashMap<>();
+    private static final java.util.Map<String, Long> CACHE_AT = new java.util.HashMap<>();
+    static final android.util.LruCache<String, android.graphics.Bitmap> POSTERS =
+            new android.util.LruCache<String, android.graphics.Bitmap>(8 * 1024 * 1024) {
+                @Override
+                protected int sizeOf(String k, android.graphics.Bitmap b) {
+                    return b.getByteCount();
+                }
+            };
+
+    static synchronized List<Genre> cached(String kind) {
+        Long at = CACHE_AT.get(kind);
+        if (at == null || System.currentTimeMillis() - at > 3 * 3600 * 1000L) return null;
+        return CACHE.get(kind);
+    }
+
+    /** Blocking: fetches trending and the two front posters of each stack into the caches. */
+    static List<Genre> load(String key, String kind) throws Exception {
+        List<Genre> c = cached(kind);
+        if (c != null) return c;
+        List<Genre> list = trending(key, kind);
+        synchronized (Tmdb.class) {
+            CACHE.put(kind, list);
+            CACHE_AT.put(kind, System.currentTimeMillis());
+        }
+        for (Genre g : list) {
+            for (int i = 0; i < Math.min(2, g.titles.size()); i++) poster(g.titles.get(i).poster);
+        }
+        return list;
+    }
+
+    /** Blocking poster fetch through the cache. */
+    static android.graphics.Bitmap poster(String url) {
+        android.graphics.Bitmap b = POSTERS.get(url);
+        if (b != null) return b;
+        b = Net.bitmap(url);
+        if (b != null) POSTERS.put(url, b);
+        return b;
+    }
+
     static String key(File themeDir) {
         if (themeDir == null) return null;
         File f = new File(themeDir, KEY_FILE);

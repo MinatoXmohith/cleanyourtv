@@ -67,8 +67,8 @@ public class DashboardActivity extends GlassScreen implements NowPlaying.Listene
 
         tabHome = findViewById(R.id.tabHome);
         tabHome.setSelected(true);
-        tabHome.setOnClickListener(v -> focusFirstApp());
-        findViewById(R.id.tabApps).setOnClickListener(v -> startActivity(new Intent(this, MainActivity.class)));
+        findViewById(R.id.tabHome).setOnClickListener(v -> { bounce(v); focusFirstApp(); });
+        findViewById(R.id.tabApps).setOnClickListener(this::openApps);
 
         glass(findViewById(R.id.musicCard), 24, 0x24000000);
         musicTitle = findViewById(R.id.musicTitle);
@@ -96,14 +96,26 @@ public class DashboardActivity extends GlassScreen implements NowPlaying.Listene
         buildApps();
 
         nowPlaying = new NowPlaying(this, this);
+        prefetchTrending();
         root.post(this::focusFirstApp);
     }
 
     @Override
     protected void onResume() {
         super.onResume();
+        if (returningFromApps) {
+            returningFromApps = false;
+            settleIn();
+            // Home on the remote starts over at the first app; Back lands where you left, on APPS.
+            if (homePressed) focusFirstApp();
+            else findViewById(R.id.tabApps).requestFocus();
+        }
+        homePressed = false;
         nowPlaying.start();
-        if (System.currentTimeMillis() - weatherAt > WEATHER_EVERY_MS) loadWeather();
+        if (System.currentTimeMillis() - weatherAt > WEATHER_EVERY_MS) {
+            loadWeather();
+            prefetchTrending();
+        }
     }
 
     @Override
@@ -116,12 +128,52 @@ public class DashboardActivity extends GlassScreen implements NowPlaying.Listene
     protected void onNewIntent(Intent intent) {
         super.onNewIntent(intent);
         // Home pressed while the dashboard is already in front: back to the first app.
-        if (intent != null && intent.hasCategory(Intent.CATEGORY_HOME)) focusFirstApp();
+        if (intent != null && intent.hasCategory(Intent.CATEGORY_HOME)) {
+            homePressed = true;
+            focusFirstApp();
+        }
     }
 
     @Override
     public void onBackPressed() {
         // Home has nowhere to go back to.
+    }
+
+    private boolean returningFromApps, homePressed;
+
+    /** APPS: press bounce on the tab, then the grid grows in while home steps back. */
+    private void openApps(View tab) {
+        tab.animate().scaleX(0.9f).scaleY(0.9f).setDuration(90).withEndAction(() -> {
+            tab.animate().scaleX(1f).scaleY(1f).setDuration(140).start();
+            returningFromApps = true;
+            startActivity(new Intent(this, MainActivity.class));
+            overridePendingTransition(R.anim.apps_enter, R.anim.home_exit);
+        }).start();
+    }
+
+    private static void bounce(View v) {
+        v.animate().scaleX(0.92f).scaleY(0.92f).setDuration(90)
+                .withEndAction(() -> v.animate().scaleX(1f).scaleY(1f).setDuration(160).start()).start();
+    }
+
+    /**
+     * Back on home from APPS (remote Home or Back): the pieces settle in one after another, top to bottom,
+     * from slightly larger and transparent, so home answers the grid shrinking away.
+     */
+    private void settleIn() {
+        int[] order = {R.id.hello, R.id.dashDate, R.id.tabs, R.id.btnStatus, R.id.musicCard, R.id.weatherMain,
+                R.id.weatherStats, R.id.appRow, R.id.trendingHint};
+        for (int i = 0; i < order.length; i++) {
+            View v = findViewById(order[i]);
+            if (v == null) continue;
+            v.animate().cancel();
+            v.setAlpha(0f);
+            v.setScaleX(1.05f);
+            v.setScaleY(1.05f);
+            v.setTranslationY(-10 * density);
+            v.animate().alpha(1f).scaleX(1f).scaleY(1f).translationY(0f).setStartDelay(i < 4 ? 0 : 40L * (i - 3))
+                    .setDuration(300).setInterpolator(new android.view.animation.DecelerateInterpolator(1.8f)).start();
+        }
     }
 
     private void focusFirstApp() {
@@ -264,6 +316,18 @@ public class DashboardActivity extends GlassScreen implements NowPlaying.Listene
         }
     }
 
+    /** Warms the trending cache in the background, so the page below slides up already filled. */
+    private void prefetchTrending() {
+        String key = Tmdb.key(Config.dir(this));
+        if (key == null) return;
+        Net.IO.execute(() -> {
+            try {
+                Tmdb.load(key, "featured");
+            } catch (Exception ignored) {
+            }
+        });
+    }
+
     private void openTrending() {
         startActivity(new Intent(this, BrowseActivity.class).putExtra("kind", "featured"));
         overridePendingTransition(R.anim.slide_up_in, R.anim.hold);
@@ -279,7 +343,7 @@ public class DashboardActivity extends GlassScreen implements NowPlaying.Listene
         row(rows, popup, R.drawable.ic_settings, getString(R.string.settings), () -> open(new Intent(Settings.ACTION_SETTINGS)));
         row(rows, popup, R.drawable.ic_home_settings, getString(R.string.launcher_settings),
                 () -> startActivity(new Intent(this, LauncherSettingsActivity.class)));
-        popup.showAsDropDown(anchor, 0, -anchor.getHeight(), Gravity.END);
+        dropIn(popup, panel, anchor);
         rows.getChildAt(0).requestFocus();
     }
 
@@ -308,8 +372,22 @@ public class DashboardActivity extends GlassScreen implements NowPlaying.Listene
             row(rows, popup, R.drawable.ic_livetv, getString(R.string.live_tv), () -> openPackage(cfg.liveTvPackage));
         }
         if (rows.getChildCount() == 0) return;
-        popup.showAsDropDown(anchor, 0, -anchor.getHeight(), Gravity.END);
+        dropIn(popup, panel, anchor);
         rows.getChildAt(0).requestFocus();
+    }
+
+    /** Glass menus open out of the time pill: fade, grow from its top-right corner. */
+    private void dropIn(PopupWindow popup, View panel, View anchor) {
+        panel.setAlpha(0f);
+        panel.setScaleX(0.92f);
+        panel.setScaleY(0.8f);
+        panel.post(() -> {
+            panel.setPivotX(panel.getWidth());
+            panel.setPivotY(0f);
+        });
+        popup.showAsDropDown(anchor, 0, -anchor.getHeight(), Gravity.END);
+        panel.animate().alpha(1f).scaleX(1f).scaleY(1f).setDuration(220)
+                .setInterpolator(new android.view.animation.DecelerateInterpolator(1.8f)).start();
     }
 
     private PopupWindow popup(View panel, int width) {
@@ -317,6 +395,7 @@ public class DashboardActivity extends GlassScreen implements NowPlaying.Listene
         p.setBackgroundDrawable(new ColorDrawable(0));
         p.setOutsideTouchable(true);
         p.setElevation(0f);
+        p.setAnimationStyle(0);   // the panel animates itself (dropIn)
         panel.setBackground(new LiquidGlass.PillDrawable(panel, null, density, 24 * density));
         return p;
     }

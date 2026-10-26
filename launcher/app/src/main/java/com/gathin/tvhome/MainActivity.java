@@ -703,6 +703,8 @@ public class MainActivity extends Activity implements AppAdapter.TileListener {
     @Override
     protected void onPause() {
         super.onPause();
+        // Leaving the grid (Back, or Home clearing it from the task): shrink it back towards the APPS tab.
+        if (isFinishing()) overridePendingTransition(0, R.anim.apps_exit);
         endReorder();   // Home or another app while reordering keeps the order so far
         stopAmbientAnimation();
         heroName.animate().cancel();
@@ -940,10 +942,12 @@ public class MainActivity extends Activity implements AppAdapter.TileListener {
         });
     }
 
+    /** Back from the APPS grid returns to the dashboard home. */
     @Override
     public void onBackPressed() {
-        // Home screen: Back goes nowhere.
+        finish();
     }
+
 
     // ---- glass highlight -------------------------------------------------------------------------
 

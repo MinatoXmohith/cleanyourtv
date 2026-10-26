@@ -120,10 +120,15 @@ public class BrowseActivity extends GlassScreen implements NowPlaying.Listener {
                     + "Save it as tmdb_key.txt in your theme folder and push the theme.");
             return;
         }
+        List<Tmdb.Genre> ready = Tmdb.cached(kind);
+        if (ready != null) {
+            show(ready);
+            return;
+        }
         showMessage("Loading…");
         Net.IO.execute(() -> {
             try {
-                List<Tmdb.Genre> list = Tmdb.trending(key, kind);
+                List<Tmdb.Genre> list = Tmdb.load(key, kind);
                 main.post(() -> show(list));
             } catch (Exception e) {
                 main.post(() -> showMessage("Couldn't reach TMDB. Check the key and the network."));
@@ -157,6 +162,10 @@ public class BrowseActivity extends GlassScreen implements NowPlaying.Listener {
             poster(fronts[i], shown[i][0]);
             poster(backs[i], shown[i][1]);
             stacks[i].setVisibility(View.VISIBLE);
+            stacks[i].setAlpha(0f);
+            stacks[i].setTranslationY(14 * density);
+            stacks[i].animate().alpha(1f).translationY(0f).setStartDelay(60L * i).setDuration(260)
+                    .setInterpolator(new android.view.animation.DecelerateInterpolator(1.6f)).start();
         }
         stacks[0].requestFocus();
     }
@@ -177,10 +186,20 @@ public class BrowseActivity extends GlassScreen implements NowPlaying.Listener {
             return;
         }
         into.setTag(t.poster);
+        Bitmap hit = Tmdb.POSTERS.get(t.poster);
+        if (hit != null) {
+            into.setImageBitmap(hit);
+            into.setAlpha(1f);
+            return;
+        }
+        into.setAlpha(0f);
         Net.IO.execute(() -> {
-            Bitmap b = Net.bitmap(t.poster);
+            Bitmap b = Tmdb.poster(t.poster);
             main.post(() -> {
-                if (b != null && t.poster.equals(into.getTag())) into.setImageBitmap(b);
+                if (b != null && t.poster.equals(into.getTag())) {
+                    into.setImageBitmap(b);
+                    into.animate().alpha(1f).setDuration(220).start();
+                }
             });
         });
     }
