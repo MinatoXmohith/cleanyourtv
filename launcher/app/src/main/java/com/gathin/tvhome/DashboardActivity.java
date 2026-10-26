@@ -274,7 +274,7 @@ public class DashboardActivity extends GlassScreen implements NowPlaying.Listene
         });
         appRow.removeAllViews();
         int n = Math.min(5, apps.size());
-        int tileW = (int) (148 * density), gap = (int) ((836 - 5 * 148) / 4f * density);
+        int tileW = (int) (136 * density), gap = (int) ((856 - 5 * 136) / 4f * density);
         for (int i = 0; i < n; i++) {
             ResolveInfo ri = apps.get(i);
             FrameLayout tile = new FrameLayout(this);
@@ -300,7 +300,7 @@ public class DashboardActivity extends GlassScreen implements NowPlaying.Listene
             tile.setForeground(getDrawable(R.drawable.focus_ring));
             round(tile, 14);
             tile.setOnFocusChangeListener((v, f) -> {
-                v.animate().scaleX(f ? 1.1f : 1f).scaleY(f ? 1.1f : 1f).translationY(f ? -4 * density : 0f)
+                v.animate().scaleX(f ? 1.07f : 1f).scaleY(f ? 1.07f : 1f).translationY(f ? -3 * density : 0f)
                         .translationZ(f ? 18 * density : 0).setDuration(170).start();
                 // tvOS: the focused app stands out, the rest of the row steps back a little.
                 appRow.post(this::dimUnfocusedApps);
