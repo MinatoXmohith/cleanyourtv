@@ -254,7 +254,7 @@ public class DashboardActivity extends GlassScreen implements NowPlaying.Listene
                 weatherCity.setText(w.city);
                 stats[0].setText(w.feelsC + "\u00b0C");
                 stats[1].setText(Weather.uvWord(w.uvMax) + " " + Math.round(w.uvMax));
-                stats[2].setText(w.windDir + " " + Math.round(w.windKmh) + " km/h");
+                stats[2].setText(w.windDir + " " + Math.round(w.windKmh) + "km/h");
                 stats[3].setText(w.cloud + "%");
             });
         });

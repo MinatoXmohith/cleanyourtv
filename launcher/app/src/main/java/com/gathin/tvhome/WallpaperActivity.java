@@ -57,14 +57,14 @@ public class WallpaperActivity extends Activity {
         LinearLayout col = new LinearLayout(this);
         col.setOrientation(LinearLayout.VERTICAL);
         int side = dp(72);
-        col.setPadding(side, dp(36), side, dp(36));
+        col.setPadding(side, dp(26), side, dp(20));
         scroll.addView(col);
         root.addView(scroll, match());
         setContentView(root);
 
-        col.addView(text("Wallpapers", 32, semibold, 0xFFFFFFFF));
-        status = text("Pick one for your mood. Press Home to see it.", 15, regular, 0xB3FFFFFF);
-        status.setPadding(0, dp(4), 0, dp(14));
+        col.addView(text("Wallpapers", 28, semibold, 0xFFFFFFFF));
+        status = text("Pick one for your mood. Live wallpapers pause while an app is open.", 15, regular, 0xB3FFFFFF);
+        status.setPadding(0, dp(2), 0, dp(10));
         col.addView(status);
 
         themeRow = text("", 17, medium, 0xFFFFFFFF);
@@ -74,7 +74,7 @@ public class WallpaperActivity extends Activity {
         themeRow.setFocusable(true);
         themeRow.setClickable(true);
         themeRow.setOnClickListener(v -> choose(Wallpapers.THEME));
-        col.addView(themeRow, new LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, dp(50)));
+        col.addView(themeRow, new LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, dp(44)));
 
         col.addView(section("STATIC"));
         LinearLayout staticRow = row();
@@ -109,10 +109,6 @@ public class WallpaperActivity extends Activity {
         }
         col.addView(liveRow);
 
-        TextView note = text("Live wallpapers pause while an app is open, so they never slow down what you watch.",
-                13, regular, 0x99FFFFFF);
-        note.setPadding(0, dp(18), 0, 0);
-        col.addView(note);
 
         showBackground(Wallpapers.choice(this), false);
         refresh();
@@ -134,7 +130,7 @@ public class WallpaperActivity extends Activity {
         r.setOrientation(LinearLayout.HORIZONTAL);
         r.setClipChildren(false);
         r.setClipToPadding(false);
-        r.setPadding(0, dp(8), 0, dp(4));
+        r.setPadding(0, dp(8), 0, 0);
         return r;
     }
 
@@ -147,7 +143,7 @@ public class WallpaperActivity extends Activity {
     private TextView section(String label) {
         TextView t = text(label, 13, medium, 0xCCFFFFFF);
         t.setLetterSpacing(0.16f);
-        t.setPadding(0, dp(22), 0, 0);
+        t.setPadding(0, dp(16), 0, 0);
         return t;
     }
 
@@ -169,15 +165,23 @@ public class WallpaperActivity extends Activity {
         });
         c.addView(thumb, new LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, dp(84)));
         TextView name = text(mood, 16, semibold, 0xFFFFFFFF);
-        name.setPadding(dp(2), dp(10), 0, 0);
+        name.setPadding(dp(2), dp(8), 0, 0);
         c.addView(name);
         TextView sub = text(hint, 12, regular, 0xB3FFFFFF);
         sub.setPadding(dp(2), 0, 0, 0);
         c.addView(sub);
-        TextView mark = text("●  In use", 12, medium, 0xFF7BE3A0);
-        mark.setPadding(dp(2), dp(4), 0, 0);
+        // "In use" badge on the thumbnail itself
+        TextView mark = text("\u2713 In use", 11, semibold, 0xFF0B0E12);
+        android.graphics.drawable.GradientDrawable pillBg = new android.graphics.drawable.GradientDrawable();
+        pillBg.setColor(0xFF7BE3A0);
+        pillBg.setCornerRadius(dp(10));
+        mark.setBackground(pillBg);
+        mark.setPadding(dp(8), dp(2), dp(8), dp(2));
+        FrameLayout.LayoutParams mlp = new FrameLayout.LayoutParams(ViewGroup.LayoutParams.WRAP_CONTENT,
+                ViewGroup.LayoutParams.WRAP_CONTENT, Gravity.TOP | Gravity.END);
+        mlp.setMargins(0, dp(6), dp(6), 0);
+        thumb.addView(mark, mlp);
         mark.setTag(thumb);
-        c.addView(mark);
         marks.add(mark);
         markIds.add(id);
 

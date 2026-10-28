@@ -110,7 +110,7 @@
                     <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="Feels like"
                         android:textColor="#D9FFFFFF" android:textSize="11sp" android:fontFamily="@font/outfit_medium" />
                     <TextView android:id="@+id/stat0" android:layout_width="wrap_content" android:layout_height="wrap_content"
-                        android:textColor="#FFFFFFFF" android:textSize="13sp" android:fontFamily="@font/outfit_semibold"
+                        android:textColor="#FFFFFFFF" android:textSize="12sp" android:fontFamily="@font/outfit_semibold" android:singleLine="true"
                         android:shadowColor="#66000000" android:shadowRadius="5" />
                 </LinearLayout>
             </LinearLayout>
@@ -123,7 +123,7 @@
                     <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="UV index"
                         android:textColor="#D9FFFFFF" android:textSize="11sp" android:fontFamily="@font/outfit_medium" />
                     <TextView android:id="@+id/stat1" android:layout_width="wrap_content" android:layout_height="wrap_content"
-                        android:textColor="#FFFFFFFF" android:textSize="13sp" android:fontFamily="@font/outfit_semibold"
+                        android:textColor="#FFFFFFFF" android:textSize="12sp" android:fontFamily="@font/outfit_semibold" android:singleLine="true"
                         android:shadowColor="#66000000" android:shadowRadius="5" />
                 </LinearLayout>
             </LinearLayout>
@@ -136,7 +136,7 @@
                     <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="Wind"
                         android:textColor="#D9FFFFFF" android:textSize="11sp" android:fontFamily="@font/outfit_medium" />
                     <TextView android:id="@+id/stat2" android:layout_width="wrap_content" android:layout_height="wrap_content"
-                        android:textColor="#FFFFFFFF" android:textSize="13sp" android:fontFamily="@font/outfit_semibold"
+                        android:textColor="#FFFFFFFF" android:textSize="12sp" android:fontFamily="@font/outfit_semibold" android:singleLine="true"
                         android:shadowColor="#66000000" android:shadowRadius="5" />
                 </LinearLayout>
             </LinearLayout>
@@ -149,7 +149,7 @@
                     <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="Cloud cover"
                         android:textColor="#D9FFFFFF" android:textSize="11sp" android:fontFamily="@font/outfit_medium" />
                     <TextView android:id="@+id/stat3" android:layout_width="wrap_content" android:layout_height="wrap_content"
-                        android:textColor="#FFFFFFFF" android:textSize="13sp" android:fontFamily="@font/outfit_semibold"
+                        android:textColor="#FFFFFFFF" android:textSize="12sp" android:fontFamily="@font/outfit_semibold" android:singleLine="true"
                         android:shadowColor="#66000000" android:shadowRadius="5" />
                 </LinearLayout>
             </LinearLayout>
