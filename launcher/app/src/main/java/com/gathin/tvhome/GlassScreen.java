@@ -23,6 +23,8 @@ import java.io.FileInputStream;
 abstract class GlassScreen extends Activity {
 
     protected float density;
+    /** The wallpaper choice this screen was built with; a different one means rebuild (see DashboardActivity). */
+    protected String appliedWallpaper = "";
     protected Config cfg;
     /** The theme's config.json, for keys Config does not know (weather_city). */
     protected JSONObject themeJson = new JSONObject();
@@ -31,8 +33,10 @@ abstract class GlassScreen extends Activity {
         density = getResources().getDisplayMetrics().density;
         cfg = Config.load(this);
         root.setBackgroundColor(cfg.backgroundColor);
+        Motion.init(this);
         LiquidGlass.clear();
-        if (cfg.wallpaper != null) showWallpaper(root, cfg.wallpaper);
+        appliedWallpaper = Wallpapers.choice(this);
+        if (!Wallpapers.applyMood(this, root) && cfg.wallpaper != null) showWallpaper(root, cfg.wallpaper);
         File json = new File(Config.dir(this), "config.json");
         if (json.isFile()) {
             try (FileInputStream in = new FileInputStream(json)) {

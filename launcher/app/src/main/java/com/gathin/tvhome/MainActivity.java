@@ -264,7 +264,8 @@ public class MainActivity extends Activity implements AppAdapter.TileListener {
         root = findViewById(R.id.root);
         root.setBackgroundColor(cfg.backgroundColor);
         LiquidGlass.clear();
-        if (cfg.wallpaper != null) showWallpaper(cfg.wallpaper);
+        Motion.init(this);
+        if (!Wallpapers.applyMood(this, root) && cfg.wallpaper != null) showWallpaper(cfg.wallpaper);
         sky = findViewById(R.id.sky);
         sky.setIntensity(cfg.skyIntensity);
         glass = findViewById(R.id.glass);
@@ -1868,7 +1869,7 @@ public class MainActivity extends Activity implements AppAdapter.TileListener {
         final PopupWindow popup = new PopupWindow(panel, width, ViewGroup.LayoutParams.WRAP_CONTENT, true);
         popup.setBackgroundDrawable(new ColorDrawable(Color.TRANSPARENT));   // needed for Back to dismiss
         popup.setOutsideTouchable(true);
-        popup.setAnimationStyle(0);
+        popup.setAnimationStyle(R.style.PopupFade);
         popup.setElevation(0f);
         popup.setOnDismissListener(() -> {
             if (openPopup == popup) openPopup = null;

@@ -105,6 +105,7 @@ final class LiquidGlass {
         private final Paint rim = new Paint(Paint.ANTI_ALIAS_FLAG);
         private final Paint topGlow = new Paint(Paint.ANTI_ALIAS_FLAG);
         private final Paint shade = new Paint(Paint.ANTI_ALIAS_FLAG);
+        private final Paint liveVeil = new Paint(Paint.ANTI_ALIAS_FLAG);
         private final Matrix bodyM = new Matrix(), lensM = new Matrix();
         private final RectF inner = new RectF();
         private Bitmap shaderFor;
@@ -136,6 +137,7 @@ final class LiquidGlass {
             shade.setStyle(Paint.Style.STROKE);
             shade.setStrokeWidth(1f * density);
             shade.setColor(0x40000000);
+            liveVeil.setColor(0x2E0A0E14);
         }
 
         /**
@@ -166,6 +168,10 @@ final class LiquidGlass {
                 inner.set(rect);
                 inner.inset(ring / 2f, ring / 2f);
                 c.drawRoundRect(inner, Math.max(0, radius - ring / 2f), Math.max(0, radius - ring / 2f), lens);
+            }
+            else {
+                // Live wallpaper: no frozen backdrop, the motion shows through; a soft veil keeps text readable.
+                c.drawRoundRect(rect, radius, radius, liveVeil);
             }
             c.drawRoundRect(rect, radius, radius, tint);
             lensLight.setStrokeWidth(ring);

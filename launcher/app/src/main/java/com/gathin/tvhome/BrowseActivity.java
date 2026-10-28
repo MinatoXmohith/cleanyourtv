@@ -58,8 +58,7 @@ public class BrowseActivity extends GlassScreen implements NowPlaying.Listener {
             round(backs[i], 10);
             fronts[i].setBackgroundColor(0x33FFFFFF);
             backs[i].setBackgroundColor(0x22FFFFFF);
-            stacks[i].setOnFocusChangeListener((v, f) -> v.animate().scaleX(f ? 1.05f : 1f).scaleY(f ? 1.05f : 1f)
-                    .setDuration(160).start());
+            stacks[i].setOnFocusChangeListener((v, f) -> Motion.focus(v, f, 1.05f, 2 * density));
             stacks[i].setOnClickListener(v -> {
                 if (shown[k][0] != null) search(shown[k][0].name);
             });
@@ -164,8 +163,8 @@ public class BrowseActivity extends GlassScreen implements NowPlaying.Listener {
             stacks[i].setVisibility(View.VISIBLE);
             stacks[i].setAlpha(0f);
             stacks[i].setTranslationY(14 * density);
-            stacks[i].animate().alpha(1f).translationY(0f).setStartDelay(60L * i).setDuration(260)
-                    .setInterpolator(new android.view.animation.DecelerateInterpolator(1.6f)).start();
+            stacks[i].animate().alpha(1f).translationY(0f).setStartDelay(Motion.ms(60L * i)).setDuration(Motion.ms(260))
+                    .setInterpolator(Motion.EMPHASIZED).start();
         }
         stacks[0].requestFocus();
     }
@@ -198,7 +197,7 @@ public class BrowseActivity extends GlassScreen implements NowPlaying.Listener {
             main.post(() -> {
                 if (b != null && t.poster.equals(into.getTag())) {
                     into.setImageBitmap(b);
-                    into.animate().alpha(1f).setDuration(220).start();
+                    into.animate().alpha(1f).setDuration(Motion.ms(220)).start();
                 }
             });
         });

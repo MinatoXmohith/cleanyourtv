@@ -53,4 +53,9 @@
         <item name="android:layout_marginEnd">10dp</item>
         <item name="android:gravity">center</item>
     </style>
+    <!-- Popup menus: they animate in themselves; this fades them out on close. -->
+    <style name="PopupFade">
+        <item name="android:windowEnterAnimation">@null</item>
+        <item name="android:windowExitAnimation">@anim/popup_exit</item>
+    </style>
 </resources>

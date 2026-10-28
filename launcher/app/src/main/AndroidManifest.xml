@@ -78,6 +78,11 @@
             </intent-filter>
         </activity>
         <activity
+            android:name=".WallpaperActivity"
+            android:exported="false"
+            android:excludeFromRecents="true"
+            android:screenOrientation="landscape" />
+        <activity
             android:name=".BrowseActivity"
             android:exported="false"
             android:configChanges="orientation|screenSize|keyboard|keyboardHidden|uiMode"

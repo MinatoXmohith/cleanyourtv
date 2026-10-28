@@ -103,6 +103,11 @@ public class DashboardActivity extends GlassScreen implements NowPlaying.Listene
     @Override
     protected void onResume() {
         super.onResume();
+        // A new wallpaper was picked in Launcher settings: rebuild with it.
+        if (!Wallpapers.choice(this).equals(appliedWallpaper)) {
+            recreate();
+            return;
+        }
         if (returningFromApps) {
             returningFromApps = false;
             settleIn();
@@ -143,8 +148,8 @@ public class DashboardActivity extends GlassScreen implements NowPlaying.Listene
 
     /** APPS: press bounce on the tab, then the grid grows in while home steps back. */
     private void openApps(View tab) {
-        tab.animate().scaleX(0.9f).scaleY(0.9f).setDuration(90).withEndAction(() -> {
-            tab.animate().scaleX(1f).scaleY(1f).setDuration(140).start();
+        tab.animate().scaleX(0.9f).scaleY(0.9f).setDuration(Motion.ms(90)).withEndAction(() -> {
+            tab.animate().scaleX(1f).scaleY(1f).setDuration(Motion.ms(140)).start();
             returningFromApps = true;
             startActivity(new Intent(this, MainActivity.class));
             overridePendingTransition(R.anim.apps_enter, R.anim.home_exit);
@@ -152,8 +157,8 @@ public class DashboardActivity extends GlassScreen implements NowPlaying.Listene
     }
 
     private static void bounce(View v) {
-        v.animate().scaleX(0.92f).scaleY(0.92f).setDuration(90)
-                .withEndAction(() -> v.animate().scaleX(1f).scaleY(1f).setDuration(160).start()).start();
+        v.animate().scaleX(0.92f).scaleY(0.92f).setDuration(Motion.ms(90))
+                .withEndAction(() -> v.animate().scaleX(1f).scaleY(1f).setDuration(Motion.ms(160)).start()).start();
     }
 
     /**
@@ -171,8 +176,8 @@ public class DashboardActivity extends GlassScreen implements NowPlaying.Listene
             v.setScaleX(1.05f);
             v.setScaleY(1.05f);
             v.setTranslationY(-10 * density);
-            v.animate().alpha(1f).scaleX(1f).scaleY(1f).translationY(0f).setStartDelay(i < 4 ? 0 : 40L * (i - 3))
-                    .setDuration(300).setInterpolator(new android.view.animation.DecelerateInterpolator(1.8f)).start();
+            v.animate().alpha(1f).scaleX(1f).scaleY(1f).translationY(0f).setStartDelay(Motion.ms(i < 4 ? 0 : 40L * (i - 3)))
+                    .setDuration(Motion.ms(300)).setInterpolator(Motion.EMPHASIZED).start();
         }
     }
 
@@ -300,8 +305,7 @@ public class DashboardActivity extends GlassScreen implements NowPlaying.Listene
             tile.setForeground(getDrawable(R.drawable.focus_ring));
             round(tile, 14);
             tile.setOnFocusChangeListener((v, f) -> {
-                v.animate().scaleX(f ? 1.07f : 1f).scaleY(f ? 1.07f : 1f).translationY(f ? -3 * density : 0f)
-                        .translationZ(f ? 18 * density : 0).setDuration(170).start();
+                Motion.focus(v, f, 1.07f, 3 * density);
                 // tvOS: the focused app stands out, the rest of the row steps back a little.
                 appRow.post(this::dimUnfocusedApps);
             });
@@ -337,7 +341,7 @@ public class DashboardActivity extends GlassScreen implements NowPlaying.Listene
         for (int i = 0; i < appRow.getChildCount(); i++) {
             View t = appRow.getChildAt(i);
             float target = focused == null || t == focused ? 1f : 0.7f;
-            t.animate().alpha(target).setDuration(170).start();
+            t.animate().alpha(target).setDuration(Motion.ms(170)).start();
         }
     }
 
@@ -399,8 +403,8 @@ public class DashboardActivity extends GlassScreen implements NowPlaying.Listene
             panel.setPivotY(0f);
         });
         popup.showAsDropDown(anchor, 0, -anchor.getHeight(), Gravity.END);
-        panel.animate().alpha(1f).scaleX(1f).scaleY(1f).setDuration(220)
-                .setInterpolator(new android.view.animation.DecelerateInterpolator(1.8f)).start();
+        panel.animate().alpha(1f).scaleX(1f).scaleY(1f).setDuration(Motion.ms(220))
+                .setInterpolator(Motion.EMPHASIZED).start();
     }
 
     private PopupWindow popup(View panel, int width) {
@@ -408,7 +412,7 @@ public class DashboardActivity extends GlassScreen implements NowPlaying.Listene
         p.setBackgroundDrawable(new ColorDrawable(0));
         p.setOutsideTouchable(true);
         p.setElevation(0f);
-        p.setAnimationStyle(0);   // the panel animates itself (dropIn)
+        p.setAnimationStyle(R.style.PopupFade);   // in: dropIn; out: a short fade
         panel.setBackground(new LiquidGlass.PillDrawable(panel, null, density, 24 * density));
         return p;
     }

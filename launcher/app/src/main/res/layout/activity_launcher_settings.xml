@@ -22,6 +22,12 @@
             android:textSize="34sp" />
 
         <TextView
+            android:id="@+id/wallpapersChoice"
+            style="@style/SettingsRow"
+            android:layout_marginTop="24dp"
+            android:text="Wallpapers  ·  pick by mood (static &amp; live)" />
+
+        <TextView
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:layout_marginTop="28dp"

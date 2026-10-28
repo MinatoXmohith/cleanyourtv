@@ -88,6 +88,10 @@ public final class LauncherSettingsActivity extends Activity {
             Toast.makeText(this, R.string.home_settings_help, Toast.LENGTH_LONG).show();
             open(new Intent(Settings.ACTION_HOME_SETTINGS));
         });
+        findViewById(R.id.wallpapersChoice).setOnClickListener(v -> {
+            startActivity(new Intent(this, WallpaperActivity.class));
+            overridePendingTransition(R.anim.apps_enter, 0);
+        });
         findViewById(R.id.tvSettingsChoice).setOnClickListener(v ->
                 open(new Intent(Settings.ACTION_SETTINGS)));
         refresh();
