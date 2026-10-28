@@ -32,7 +32,6 @@ public class WallpaperActivity extends Activity {
     private TextView themeRow, status;
     private final List<TextView> marks = new ArrayList<>();
     private final List<String> markIds = new ArrayList<>();
-    private final List<LiveWallpaperView> livePreviews = new ArrayList<>();
     private Typeface semibold, medium, regular;
 
     @Override
@@ -79,23 +78,34 @@ public class WallpaperActivity extends Activity {
 
         col.addView(section("STATIC"));
         LinearLayout staticRow = row();
-        for (int i = 0; i < 5; i++) {
+        List<Wallpapers.Entry> statics = Wallpapers.list(this, false);
+        for (int i = 0; i < statics.size(); i++) {
+            Wallpapers.Entry e = statics.get(i);
             ImageView img = new ImageView(this);
             img.setScaleType(ImageView.ScaleType.CENTER_CROP);
-            img.setImageBitmap(Wallpapers.decode(this, Wallpapers.STATIC_RES[i], 8));
-            staticRow.addView(card(img, Wallpapers.STATIC_NAMES[i], Wallpapers.STATIC_HINTS[i],
-                    "static:" + Wallpapers.STATIC_IDS[i], null), cardParams(i));
+            img.setImageBitmap(Wallpapers.thumbnail(this, e));
+            staticRow.addView(card(img, e.mood, e.name, Wallpapers.key(e), null), cardParams(i));
         }
         col.addView(staticRow);
 
         col.addView(section("LIVE  ·  ANIMATED"));
         LinearLayout liveRow = row();
-        for (int i = 0; i < 5; i++) {
-            LiveWallpaperView live = new LiveWallpaperView(this, i);
-            live.setRunning(false);
-            livePreviews.add(live);
-            liveRow.addView(card(live, Wallpapers.LIVE_NAMES[i], Wallpapers.LIVE_HINTS[i],
-                    "live:" + Wallpapers.LIVE_IDS[i], live), cardParams(i));
+        List<Wallpapers.Entry> lives = Wallpapers.list(this, true);
+        for (int i = 0; i < lives.size(); i++) {
+            Wallpapers.Entry e = lives.get(i);
+            View preview;
+            LiveWallpaperView scene = null;
+            if (e.scene >= 0) {
+                scene = new LiveWallpaperView(this, e.scene);
+                scene.setRunning(false);
+                preview = scene;
+            } else {
+                ImageView img = new ImageView(this);
+                img.setScaleType(ImageView.ScaleType.CENTER_CROP);
+                img.setImageBitmap(Wallpapers.thumbnail(this, e));
+                preview = img;
+            }
+            liveRow.addView(card(preview, e.mood, e.name, Wallpapers.key(e), scene), cardParams(i));
         }
         col.addView(liveRow);
 
